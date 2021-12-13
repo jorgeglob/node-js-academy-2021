@@ -5,8 +5,28 @@ const cors = require("cors");
 const morgan = require("morgan");
 const { connect } = require("mongoose");
 const app = express();
-const MovieModel = require("./schemas/movie");
-const { body, validationResult } = require("express-validator");
+const moviesRouter = require("./routes/movies");
+
+/*
+  REST API:
+
+  1. Usar los verbos de HTTP adecuadamente
+
+  2. La transmisión de datos sea JSON/XML
+
+  3. Usar los códigos de respuesta de HTTP adecuadamente
+
+  4. Usar pronombres (en plural) en lugar de verbos
+
+  getMovies -> movies (GET)
+  addMovie -> movies (POST)
+
+  5. Expresar las relaciones de las entidades en la URL
+
+  /movies/:id/actors
+
+  6. Las peticiones contengan todo lo necesario para ser ejecutados (es decir, que no haya un estado)
+*/
 
 connect(process.env.MONGO_URI)
   .then(() => console.log("Conectado a MongoDB"))
@@ -16,44 +36,7 @@ app.use(express.json());
 app.use(cors());
 app.use(morgan("tiny"));
 
-app.get("/", function (request, response) {
-  response.send("Hello World");
-});
-
-// 1. Todas las peliculas
-app.get("/getMovies", async function (request, response) {
-  try {
-    const documents = await MovieModel.find().exec();
-    response.json(documents);
-  } catch (e) {
-    response.status(500).json({
-      message: e.message,
-    });
-  }
-});
-
-const validations = [
-  body("title").notEmpty().withMessage("El titulo es obligatorio"),
-];
-
-// 2. Crear una nueva película
-app.post("/addMovie", validations, async function (request, response) {
-  try {
-    const result = validationResult(request);
-
-    if (!result.isEmpty()) {
-      return response.status(400).json(result.array());
-    }
-
-    const document = new MovieModel(request.body);
-    await document.save();
-    response.json(document);
-  } catch (e) {
-    response.status(500).json({
-      message: e.message,
-    });
-  }
-});
+app.use("/peliculas", moviesRouter);
 
 app.listen(8080, function () {
   console.log("> Servidor escuchando el puerto 8080");
